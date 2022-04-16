@@ -34,6 +34,10 @@
             .letter-used {
                 background: #088;
             }
+
+            .colorblind .cell-close {
+                background: #808;
+            }
         </style>
         <script>
             let secrets = [];
@@ -172,10 +176,24 @@
             });
 
             window.addEventListener("load", function(event) {
+                const eColorblind = document.getElementById("colorblind");
                 const eSecrets = document.getElementById("secrets");
                 const eWordLength = document.getElementById("word-length");
                 const eGuesses = document.getElementById("guesses");
                 const eStart = document.getElementById("start");
+                const eBody = document.getElementsByTagName("body")[0];
+
+                if (eColorblind.checked) {
+                    eBody.classList.add("colorblind");
+                }
+                
+                eColorblind.addEventListener("change", function(event) {
+                    if (eColorblind.checked) {
+                        eBody.classList.add("colorblind");
+                    } else {
+                        eBody.classList.remove("colorblind");
+                    }
+                });
 
                 eStart.addEventListener("click", function(event) {
                     secrets = [];
@@ -217,12 +235,14 @@
         </script>
     </head>
     <body>
+        <label for="colorblind">Colorblind mode</label>
+        <input type="checkbox" name="colorblind" id="colorblind"><br>
         <label for="secrets">Number of secret words</label>
-        <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1">
+        <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1"><br>
         <label for="word-length">Word length</label>
-        <input type="number" name="word-length" id="word-length" min="2" max="20" value="5">
+        <input type="number" name="word-length" id="word-length" min="2" max="20" value="5"><br>
         <label for="guesses">Number of guesses</label>
-        <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6">
+        <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6"><br>
         <button id="start">Start</button>
         <div id="letters"></div>
         <div id="game"></div>

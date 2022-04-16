@@ -92,17 +92,18 @@
 
                 for (let i = 0; i < secrets.length; i++) {
                     const eGrid = document.createElement("div");
+                    let done = false;
                     eGrid.classList.add("grid");
 
                     for (let j = 0; j < maxGuesses; j++) {
                         const eRow = document.createElement("div");
-                        const result = j < guesses.length ? check(secrets[i], guesses[j]) : null;
+                        let result = j < guesses.length ? check(secrets[i], guesses[j]) : null;
 
                         for (let k = 0; k < wordLength; k++) {
                             const eCell = document.createElement("div");
                             eCell.classList.add("cell");
 
-                            if (j < guesses.length) {
+                            if (!done && j < guesses.length) {
                                 eCell.innerText = guesses[j][k];
 
                                 if (result[k] === "CORRECT") {
@@ -112,7 +113,7 @@
                                 } else if (result[k] === "WRONG") {
                                     eCell.classList.add("cell-wrong");
                                 }
-                            } else if (j === guesses.length && k < textField.length) {
+                            } else if (!done && j === guesses.length && k < textField.length) {
                                 eCell.innerText = textField[k];
                                 if (!valid) {
                                     eCell.classList.add("cell-invalid");
@@ -122,6 +123,7 @@
                             eRow.appendChild(eCell);
                         }
 
+                        done = done || (j < guesses.length && guesses[j] === secrets[i]);
                         eGrid.appendChild(eRow);
                     }
 
@@ -226,7 +228,7 @@
                     const data = request.responseText.split("\n");
 
                     for (let i = 0; i < data.length; i++) {
-                        words.push(data[i].toUpperCase());
+                        words.push(data[i].trim().toUpperCase());
                     }
                 });
                 request.open("GET", "https://raw.githubusercontent.com/DutChen18/nordle/master/words.txt");
@@ -235,15 +237,17 @@
         </script>
     </head>
     <body>
-        <label for="colorblind">Colorblind mode</label>
-        <input type="checkbox" name="colorblind" id="colorblind"><br>
-        <label for="secrets">Number of secret words</label>
-        <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1"><br>
-        <label for="word-length">Word length</label>
-        <input type="number" name="word-length" id="word-length" min="2" max="20" value="5"><br>
-        <label for="guesses">Number of guesses</label>
-        <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6"><br>
-        <button id="start">Start</button>
+        <div id="settings">
+            <label for="colorblind">Colorblind mode</label>
+            <input type="checkbox" name="colorblind" id="colorblind"><br>
+            <label for="secrets">Number of secret words</label>
+            <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1"><br>
+            <label for="word-length">Word length</label>
+            <input type="number" name="word-length" id="word-length" min="2" max="25" value="5"><br>
+            <label for="guesses">Number of guesses</label>
+            <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6"><br>
+            <button id="start">Start</button>
+        </div>
         <div id="letters"></div>
         <div id="game"></div>
     </body>

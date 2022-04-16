@@ -1,12 +1,20 @@
 <html>
     <head>
         <style>
-            .cell {
+            .grid {
+                display: inline-block;
+                margin: 3px;
+            }
+
+            .cell, .letter {
+                display: inline-block;
+                border: 1px solid #ccc;
                 background: #000;
                 color: #ccc;
                 font: bold 16px monospace;
                 width: 32px;
                 height: 32px;
+                line-height: 32px;
                 text-align: center;
                 vertical-align: middle;
             }
@@ -18,26 +26,36 @@
             .cell-close {
                 background: #880;
             }
+
+            .cell-invalid {
+                background: #800;
+            }
+
+            .letter-used {
+                background: #088;
+            }
         </style>
         <script>
             let secrets = [];
             let guesses = [];
             let maxGuesses = 6;
             let wordLength = 5;
-            let textField = '';
+            let textField = "";
+            let words = [];
+            let running = false;
 
             function check(secret, guess) {
-                const secretArray = secret.split('');
-                const guessArray = guess.split('');
+                const secretArray = secret.split("");
+                const guessArray = guess.split("");
                 const result = [];
         
                 for (let i = 0; i < wordLength; i++) {
                     if (secretArray[i] === guessArray[i]) {
-                        result.push('CORRECT');
+                        result.push("CORRECT");
                         secretArray[i] = null;
                         guessArray[i] = null;
                     } else {
-                        result.push('WRONG');
+                        result.push("WRONG");
                     }
                 }
         
@@ -46,7 +64,7 @@
                         const j = guessArray.indexOf(secretArray[i]);
 
                         if (j !== -1) {
-                            result[j] = 'CLOSE';
+                            result[j] = "CLOSE";
                             guessArray[j] = null;
                         }
                     }
@@ -56,66 +74,157 @@
             }
 
             function render() {
-                const game = document.getElementById('game');
+                const eGame = document.getElementById("game");
+                const eLetters = document.getElementById("letters");
+                const valid = textField.length < wordLength || words.indexOf(textField) !== -1;
                 
-                while (game.firstChild !== null) {
-                    game.removeChild(game.firstChild);
+                while (eGame.firstChild !== null) {
+                    eGame.removeChild(eGame.firstChild);
+                }
+
+                while (eLetters.firstChild !== null) {
+                    eLetters.removeChild(eLetters.firstChild);
                 }
 
                 for (let i = 0; i < secrets.length; i++) {
-                    const grid = document.createElement('table');
+                    const eGrid = document.createElement("div");
+                    eGrid.classList.add("grid");
 
                     for (let j = 0; j < maxGuesses; j++) {
-                        const row = document.createElement('tr');
+                        const eRow = document.createElement("div");
                         const result = j < guesses.length ? check(secrets[i], guesses[j]) : null;
 
                         for (let k = 0; k < wordLength; k++) {
-                            const cell = document.createElement('td');
-                            cell.classList.add('cell');
+                            const eCell = document.createElement("div");
+                            eCell.classList.add("cell");
 
                             if (j < guesses.length) {
-                                cell.innerText = guesses[j][k];
+                                eCell.innerText = guesses[j][k];
 
-                                if (result[k] === 'CORRECT') {
-                                    cell.classList.add('cell-correct');
-                                } else if (result[k] === 'CLOSE') {
-                                    cell.classList.add('cell-close');
-                                } else if (result[k] === 'WRONG') {
-                                    cell.classList.add('cell-wrong');
+                                if (result[k] === "CORRECT") {
+                                    eCell.classList.add("cell-correct");
+                                } else if (result[k] === "CLOSE") {
+                                    eCell.classList.add("cell-close");
+                                } else if (result[k] === "WRONG") {
+                                    eCell.classList.add("cell-wrong");
                                 }
                             } else if (j === guesses.length && k < textField.length) {
-                                cell.innerText = textField[k];
+                                eCell.innerText = textField[k];
+                                if (!valid) {
+                                    eCell.classList.add("cell-invalid");
+                                }
                             }
 
-                            row.appendChild(cell);
+                            eRow.appendChild(eCell);
                         }
 
-                        grid.appendChild(row);
+                        eGrid.appendChild(eRow);
                     }
 
-                    game.appendChild(grid);
+                    eGame.appendChild(eGrid);
+                }
+
+                for (let i = 0; i < 26; i++) {
+                    let char = String.fromCharCode(i + 65);
+                    const eLetter = document.createElement("div");
+                    eLetter.classList.add("letter");
+                    eLetter.innerText = char;
+
+                    let used = false;
+                    
+                    for (let j = 0; j < guesses.length; j++) {
+                        if (guesses[j].indexOf(char) !== -1) {
+                            used = true;
+                            break;
+                        }
+                    }
+
+                    if (used) {
+                        eLetter.classList.add("letter-used");
+                    }
+
+                    eLetters.appendChild(eLetter);
                 }
             }
 
-            window.addEventListener('keydown', function(event) {
-                if (event.key.match(/^[a-z]$/i) && textField.length < wordLength) {
-                    textField += event.key.toUpperCase();
-                } else if (event.key === 'Backspace' && textField.length > 0) {
-                    textField = textField.slice(0, -1);
-                } else if (event.key === 'Enter' && textField.length === wordLength) {
-                    guesses.push(textField);
-                    textField = '';
+            window.addEventListener("keydown", function(event) {
+                if (running) {
+                    if (event.key.match(/^[a-z]$/i) && textField.length < wordLength) {
+                        textField += event.key.toUpperCase();
+                    } else if (event.key === "Backspace" && textField.length > 0) {
+                        textField = textField.slice(0, -1);
+                    } else if (event.key === "Enter" && textField.length === wordLength && words.indexOf(textField) !== -1) {
+                        guesses.push(textField);
+                        textField = "";
+                    }
+
+                    let won = true;
+
+                    for (let i = 0; i < secrets.length; i++) {
+                        if (guesses.indexOf(secrets[i]) === -1) {
+                            won = false;
+                        }
+                    }
+
+                    running = !won && guesses.length < maxGuesses;
+                    render();
                 }
-                render();
+            });
+
+            window.addEventListener("load", function(event) {
+                const eSecrets = document.getElementById("secrets");
+                const eWordLength = document.getElementById("word-length");
+                const eGuesses = document.getElementById("guesses");
+                const eStart = document.getElementById("start");
+
+                eStart.addEventListener("click", function(event) {
+                    secrets = [];
+                    guesses = [];
+                    textField = "";
+                    wordLength = parseInt(eWordLength.value);
+                    maxGuesses = parseInt(eGuesses.value);
+                    running = true;
+                    
+                    const filteredWords = [];
+                    const secretCount = parseInt(eSecrets.value);
+
+                    for (let i = 0; i < words.length; i++) {
+                        if (words[i].length === wordLength) {
+                            filteredWords.push(words[i]);
+                        }
+                    }
+
+                    for (let i = 0; i < secretCount; i++) {
+                        const index = Math.floor(Math.random() * filteredWords.length);
+                        secrets.push(filteredWords[index]);
+                    }
+
+                    eStart.blur();
+                    render();
+                });
+
+                const request = new XMLHttpRequest();
+                request.addEventListener("load", function() {
+                    const data = request.responseText.split("\n");
+
+                    for (let i = 0; i < data.length; i++) {
+                        words.push(data[i].toUpperCase());
+                    }
+                });
+                request.open("GET", "https://raw.githubusercontent.com/DutChen18/nordle/master/words.txt");
+                request.send();
             });
         </script>
     </head>
     <body>
+        <label for="secrets">Number of secret words</label>
+        <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1">
+        <label for="word-length">Word length</label>
+        <input type="number" name="word-length" id="word-length" min="2" max="20" value="5">
+        <label for="guesses">Number of guesses</label>
+        <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6">
+        <button id="start">Start</button>
+        <div id="letters"></div>
         <div id="game"></div>
-        <script>
-            secrets.push('FIRST');
-            secrets.push('HELLO');
-            render();
-        </script>
     </body>
 </html>

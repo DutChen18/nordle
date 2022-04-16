@@ -1,0 +1,121 @@
+<html>
+    <head>
+        <style>
+            .cell {
+                background: #000;
+                color: #ccc;
+                font: bold 16px monospace;
+                width: 32px;
+                height: 32px;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            .cell-correct {
+                background: #080;
+            }
+
+            .cell-close {
+                background: #880;
+            }
+        </style>
+        <script>
+            let secrets = [];
+            let guesses = [];
+            let maxGuesses = 6;
+            let wordLength = 5;
+            let textField = '';
+
+            function check(secret, guess) {
+                const secretArray = secret.split('');
+                const guessArray = guess.split('');
+                const result = [];
+        
+                for (let i = 0; i < wordLength; i++) {
+                    if (secretArray[i] === guessArray[i]) {
+                        result.push('CORRECT');
+                        secretArray[i] = null;
+                        guessArray[i] = null;
+                    } else {
+                        result.push('WRONG');
+                    }
+                }
+        
+                for (let i = 0; i < wordLength; i++) {
+                    if (secretArray[i] !== null) {
+                        const j = guessArray.indexOf(secretArray[i]);
+
+                        if (j !== -1) {
+                            result[j] = 'CLOSE';
+                            guessArray[j] = null;
+                        }
+                    }
+                }
+        
+                return result;
+            }
+
+            function render() {
+                const game = document.getElementById('game');
+                
+                while (game.firstChild !== null) {
+                    game.removeChild(game.firstChild);
+                }
+
+                for (let i = 0; i < secrets.length; i++) {
+                    const grid = document.createElement('table');
+
+                    for (let j = 0; j < maxGuesses; j++) {
+                        const row = document.createElement('tr');
+                        const result = j < guesses.length ? check(secrets[i], guesses[j]) : null;
+
+                        for (let k = 0; k < wordLength; k++) {
+                            const cell = document.createElement('td');
+                            cell.classList.add('cell');
+
+                            if (j < guesses.length) {
+                                cell.innerText = guesses[j][k];
+
+                                if (result[k] === 'CORRECT') {
+                                    cell.classList.add('cell-correct');
+                                } else if (result[k] === 'CLOSE') {
+                                    cell.classList.add('cell-close');
+                                } else if (result[k] === 'WRONG') {
+                                    cell.classList.add('cell-wrong');
+                                }
+                            } else if (j === guesses.length && k < textField.length) {
+                                cell.innerText = textField[k];
+                            }
+
+                            row.appendChild(cell);
+                        }
+
+                        grid.appendChild(row);
+                    }
+
+                    game.appendChild(grid);
+                }
+            }
+
+            window.addEventListener('keydown', function(event) {
+                if (event.key.match(/^[a-z]$/i) && textField.length < wordLength) {
+                    textField += event.key.toUpperCase();
+                } else if (event.key === 'Backspace' && textField.length > 0) {
+                    textField = textField.slice(0, -1);
+                } else if (event.key === 'Enter' && textField.length === wordLength) {
+                    guesses.push(textField);
+                    textField = '';
+                }
+                render();
+            });
+        </script>
+    </head>
+    <body>
+        <div id="game"></div>
+        <script>
+            secrets.push('FIRST');
+            secrets.push('HELLO');
+            render();
+        </script>
+    </body>
+</html>

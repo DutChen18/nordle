@@ -1,9 +1,71 @@
 <html>
     <head>
         <style>
-            .grid {
+            * {
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                height: 100%;
+            }
+
+            #settings {
+                flex: 0 0 auto;
+                background: #333;
+                color: #CCC;
+                line-height: 24px;
+            }
+
+            #settings > div {
                 display: inline-block;
-                margin: 3px;
+                margin-left: 8px;
+                margin-right: 8px;
+            }
+
+            #settings input[type=text], #settings button {
+                border: 1px solid #888;
+                background: #333;
+                color: #CCC;
+                width: 128px;
+                height: 24px;
+                padding: 2px;
+                margin: 2px;
+                font-size: 12px;
+            }
+
+            #game-container {
+                flex: 1 1 auto;
+                background: #333;
+                color: #CCC;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            #game {
+                overflow: scroll;
+                white-space: nowrap;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 4px;
+            }
+
+            #letters {
+                flex: 0 0 34px;
+                background: #333;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .grid {
+                display: block;
             }
 
             .cell, .letter {
@@ -12,9 +74,6 @@
                 background: #000;
                 color: #ccc;
                 font: bold 16px monospace;
-                width: 32px;
-                height: 32px;
-                line-height: 32px;
                 text-align: center;
                 vertical-align: middle;
             }
@@ -29,6 +88,12 @@
 
             .cell-invalid {
                 background: #800;
+            }
+
+            .letter {
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
             }
 
             .letter-used {
@@ -77,91 +142,137 @@
                 return result;
             }
 
-            function render() {
+            function renderSetup() {
                 const eGame = document.getElementById("game");
                 const eLetters = document.getElementById("letters");
-                const valid = textField.length < wordLength || words.indexOf(textField) !== -1;
-                
+
                 while (eGame.firstChild !== null) {
                     eGame.removeChild(eGame.firstChild);
                 }
 
-                while (eLetters.firstChild !== null) {
-                    eLetters.removeChild(eLetters.firstChild);
-                }
-
                 for (let i = 0; i < secrets.length; i++) {
                     const eGrid = document.createElement("div");
-                    let done = false;
+                    eGame.appendChild(eGrid);
                     eGrid.classList.add("grid");
 
                     for (let j = 0; j < maxGuesses; j++) {
                         const eRow = document.createElement("div");
-                        let result = j < guesses.length ? check(secrets[i], guesses[j]) : null;
+                        eGrid.appendChild(eRow);
+                        eRow.classList.add("grid-row");
 
                         for (let k = 0; k < wordLength; k++) {
                             const eCell = document.createElement("div");
-                            eCell.classList.add("cell");
-
-                            if (!done && j < guesses.length) {
-                                eCell.innerText = guesses[j][k];
-
-                                if (result[k] === "CORRECT") {
-                                    eCell.classList.add("cell-correct");
-                                } else if (result[k] === "CLOSE") {
-                                    eCell.classList.add("cell-close");
-                                } else if (result[k] === "WRONG") {
-                                    eCell.classList.add("cell-wrong");
-                                }
-                            } else if (!done && j === guesses.length && k < textField.length) {
-                                eCell.innerText = textField[k];
-                                if (!valid) {
-                                    eCell.classList.add("cell-invalid");
-                                }
-                            }
-
                             eRow.appendChild(eCell);
+                            eCell.classList.add("cell");
                         }
-
-                        done = done || (j < guesses.length && guesses[j] === secrets[i]);
-                        eGrid.appendChild(eRow);
                     }
-
-                    eGame.appendChild(eGrid);
                 }
 
                 for (let i = 0; i < 26; i++) {
-                    let char = String.fromCharCode(i + 65);
-                    const eLetter = document.createElement("div");
-                    eLetter.classList.add("letter");
-                    eLetter.innerText = char;
+                    const eLetter = eLetters.children[i];
+                    eLetter.classList.remove("letter-used");
+                }
 
-                    let used = false;
-                    
-                    for (let j = 0; j < guesses.length; j++) {
-                        if (guesses[j].indexOf(char) !== -1) {
-                            used = true;
-                            break;
+                lastSize = -1;
+                resizeGame();
+            }
+
+            function renderInput() {
+                const eGame = document.getElementById("game");
+
+                for (let i = 0; i < secrets.length; i++) {
+                    const eGrid = eGame.children[i];
+                    const eRow = eGrid.children[guesses.length];
+                    const valid = textField.length < wordLength || words.indexOf(textField) !== -1;
+                    const index = guesses.indexOf(secrets[i]);
+
+                    if (index === -1) {
+                        for (let j = 0; j < wordLength; j++) {
+                            const eCell = eRow.children[j];
+                            eCell.innerText = "";
+
+                            if (valid) {
+                                eCell.classList.remove("cell-invalid")
+                            } else {
+                                eCell.classList.add("cell-invalid")
+                            }
+                        }
+
+                        for (let j = 0; j < textField.length; j++) {
+                            const eCell = eRow.children[j];
+                            eCell.innerText = textField[j];
                         }
                     }
+                }
+            }
 
-                    if (used) {
-                        eLetter.classList.add("letter-used");
+            function renderEnter() {
+                const eGame = document.getElementById("game");
+
+                for (let i = 0; i < secrets.length; i++) {
+                    const eGrid = eGame.children[i];
+                    const eRow = eGrid.children[guesses.length - 1];
+                    const result = check(secrets[i], guesses[guesses.length - 1]);
+                    const index = guesses.indexOf(secrets[i]);
+
+                    if (index === -1 || index === guesses.length - 1) {
+                        for (let j = 0; j < wordLength; j++) {
+                            const eCell = eRow.children[j];
+
+                            if (result[j] === "CORRECT") {
+                                eCell.classList.add("cell-correct");
+                            } else if (result[j] === "CLOSE") {
+                                eCell.classList.add("cell-close");
+                            } else {
+                                eCell.classList.add("cell-wrong");
+                            }
+                        }
                     }
+                }
 
-                    eLetters.appendChild(eLetter);
+                for (let i = 0; i < wordLength; i++) {
+                    const letter = guesses[guesses.length - 1][i];
+                    const eLetter = document.getElementById("letter-" + letter);
+                    eLetter.classList.add("letter-used");
+                }
+            }
+
+            let lastSize = -1;
+
+            function resizeGame() {
+                const eGame = document.getElementById("game-container");
+                const maxHeight = (eGame.clientHeight - 4) / maxGuesses;
+                const maxWidth = (eGame.clientWidth - 4) / wordLength;
+                const size = Math.floor(Math.min(maxHeight, maxWidth)) - 2;
+                const eCells = document.getElementsByClassName("cell");
+
+                if (size !== lastSize) {
+                    for (let i = 0; i < eCells.length; i++) {
+                        eCells[i].style.width = size + "px";
+                        eCells[i].style.height = size + "px";
+                        eCells[i].style.fontSize = Math.floor(size / 2) + "px";
+                        eCells[i].style.lineHeight = size + "px";
+                    }
+                    lastSize = size;
                 }
             }
 
             window.addEventListener("keydown", function(event) {
+                if (event.target.tagName === "INPUT") {
+                    return;
+                }
+
                 if (running) {
                     if (event.key.match(/^[a-z]$/i) && textField.length < wordLength) {
                         textField += event.key.toUpperCase();
+                        renderInput();
                     } else if (event.key === "Backspace" && textField.length > 0) {
                         textField = textField.slice(0, -1);
+                        renderInput();
                     } else if (event.key === "Enter" && textField.length === wordLength && words.indexOf(textField) !== -1) {
                         guesses.push(textField);
                         textField = "";
+                        renderEnter();
                     }
 
                     let won = true;
@@ -172,8 +283,13 @@
                         }
                     }
 
-                    running = !won && guesses.length < maxGuesses;
-                    render();
+                    if (won) {
+                        document.body.classList.add("game-won");
+                        running = false;
+                    } else if (guesses.length >= maxGuesses) {
+                        document.body.classList.add("game-lost");
+                        running = false;
+                    }
                 }
             });
 
@@ -188,7 +304,7 @@
                 if (eColorblind.checked) {
                     eBody.classList.add("colorblind");
                 }
-                
+
                 eColorblind.addEventListener("change", function(event) {
                     if (eColorblind.checked) {
                         eBody.classList.add("colorblind");
@@ -220,7 +336,7 @@
                     }
 
                     eStart.blur();
-                    render();
+                    renderSetup();
                 });
 
                 const request = new XMLHttpRequest();
@@ -234,21 +350,65 @@
                 request.open("GET", "https://raw.githubusercontent.com/DutChen18/nordle/master/words.txt");
                 request.send();
             });
+
+            window.requestAnimationFrame(function callback(timestamp) {
+                resizeGame();
+                window.requestAnimationFrame(callback);
+            });
         </script>
     </head>
     <body>
         <div id="settings">
-            <label for="colorblind">Colorblind mode</label>
-            <input type="checkbox" name="colorblind" id="colorblind"><br>
-            <label for="secrets">Number of secret words</label>
-            <input type="number" name="secrets" id="secrets" min="1" max="1000" value="1"><br>
-            <label for="word-length">Word length</label>
-            <input type="number" name="word-length" id="word-length" min="2" max="25" value="5"><br>
-            <label for="guesses">Number of guesses</label>
-            <input type="number" name="guesses" id="guesses" min="1" max="1000000" value="6"><br>
-            <button id="start">Start</button>
+            <div>
+                <label for="colorblind">Colorblind mode</label>
+                <input type="checkbox" name="colorblind" id="colorblind">
+            </div>
+            <div>
+                <label for="secrets">Number of secret words</label>
+                <input type="text" name="secrets" id="secrets" min="1" max="1000" value="1">
+            </div>
+            <div>
+                <label for="word-length">Word length</label>
+                <input type="text" name="word-length" id="word-length" min="2" max="16" value="5">
+            </div>
+            <div>
+                <label for="guesses">Number of guesses</label>
+                <input type="text" name="guesses" id="guesses" min="1" max="1000000" value="6">
+            </div>
+            <div>
+                <button id="start">Start</button>
+            </div>
         </div>
-        <div id="letters"></div>
-        <div id="game"></div>
+        <div id="game-container">
+            <div id="game"></div>
+        </div>
+        <div id="letters">
+            <div class="letter" id="letter-A">A</div>
+            <div class="letter" id="letter-B">B</div>
+            <div class="letter" id="letter-C">C</div>
+            <div class="letter" id="letter-D">D</div>
+            <div class="letter" id="letter-E">E</div>
+            <div class="letter" id="letter-F">F</div>
+            <div class="letter" id="letter-G">G</div>
+            <div class="letter" id="letter-H">H</div>
+            <div class="letter" id="letter-I">I</div>
+            <div class="letter" id="letter-J">J</div>
+            <div class="letter" id="letter-K">K</div>
+            <div class="letter" id="letter-L">L</div>
+            <div class="letter" id="letter-M">M</div>
+            <div class="letter" id="letter-N">N</div>
+            <div class="letter" id="letter-O">O</div>
+            <div class="letter" id="letter-P">P</div>
+            <div class="letter" id="letter-Q">Q</div>
+            <div class="letter" id="letter-R">R</div>
+            <div class="letter" id="letter-S">S</div>
+            <div class="letter" id="letter-T">T</div>
+            <div class="letter" id="letter-U">U</div>
+            <div class="letter" id="letter-V">V</div>
+            <div class="letter" id="letter-W">W</div>
+            <div class="letter" id="letter-X">X</div>
+            <div class="letter" id="letter-Y">Y</div>
+            <div class="letter" id="letter-Z">Z</div>
+        </div>
     </body>
 </html>

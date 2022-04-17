@@ -41,6 +41,7 @@
                 flex: 1 1 auto;
                 background: #333;
                 color: #CCC;
+                text-align: center;
                 display: flex;
                 flex-direction: row;
                 justify-content: center;
@@ -241,9 +242,9 @@
             let lastSize = -1;
 
             function resizeGame() {
-                const eGame = document.getElementById("game");
-                const maxHeight = (eGame.clientHeight - 4) / maxGuesses;
-                const maxWidth = (eGame.clientWidth - 4) / wordLength;
+                const eGame = document.getElementById("game-container");
+                const maxHeight = (eGame.clientHeight - 8) / maxGuesses;
+                const maxWidth = (eGame.clientWidth - 8) / wordLength;
                 const size = Math.floor(Math.min(maxHeight, maxWidth)) - 2;
                 const eCells = document.getElementsByClassName("cell");
 

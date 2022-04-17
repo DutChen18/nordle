@@ -1,5 +1,6 @@
 <html>
     <head>
+        <title>Nordle</title>
         <style>
             * {
                 margin: 0;
@@ -153,6 +154,9 @@
                     eGame.removeChild(eGame.firstChild);
                 }
 
+                document.body.classList.remove("game-won");
+                document.body.classList.remove("game-lost");
+
                 for (let i = 0; i < secrets.length; i++) {
                     const eGrid = document.createElement("div");
                     eGame.appendChild(eGrid);
@@ -244,8 +248,8 @@
 
             function resizeGame() {
                 const eGame = document.getElementById("game-container");
-                const maxHeight = (eGame.clientHeight - 8) / maxGuesses;
-                const maxWidth = (eGame.clientWidth - 8) / wordLength;
+                const maxHeight = (eGame.clientHeight - 12) / maxGuesses;
+                const maxWidth = (eGame.clientWidth - 12) / wordLength;
                 const size = Math.floor(Math.min(maxHeight, maxWidth)) - 2;
                 const eCells = document.getElementsByClassName("cell");
 
@@ -289,9 +293,11 @@
                     if (won) {
                         document.body.classList.add("game-won");
                         running = false;
+                        alert("You won!");
                     } else if (guesses.length >= maxGuesses) {
                         document.body.classList.add("game-lost");
                         running = false;
+                        alert("You lost!");
                     }
                 }
             });

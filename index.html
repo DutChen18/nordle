@@ -47,7 +47,8 @@
             }
 
             #game {
-                overflow: scroll;
+                overflow: hidden;
+                overflow-x: scroll;
                 white-space: nowrap;
                 display: flex;
                 flex-direction: row;
@@ -240,7 +241,7 @@
             let lastSize = -1;
 
             function resizeGame() {
-                const eGame = document.getElementById("game-container");
+                const eGame = document.getElementById("game");
                 const maxHeight = (eGame.clientHeight - 4) / maxGuesses;
                 const maxWidth = (eGame.clientWidth - 4) / wordLength;
                 const size = Math.floor(Math.min(maxHeight, maxWidth)) - 2;
